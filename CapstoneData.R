@@ -100,6 +100,7 @@ usVcorp <- tm_map(usVcorp, content_transformer(tolower))
 usVcorp <- tm_map(usVcorp, removePunctuation)
 usVcorp <- tm_map(usVcorp, removeWords, stopwords("english")) 
 usVcorp <- tm_map(usVcorp, stripWhitespace)
+usVcorp <- tm_map(usVcorp, removeNumbers)
 #Filter for profanity
 bad <- read.csv("bad.csv", header = TRUE, strip.white = TRUE, stringsAsFactors = FALSE) # see http://www.cs.cmu.edu/~biglou/resources/bad-words.txt
 usVcorp <- tm_map(usVcorp, removeWords, bad$words)
@@ -117,3 +118,7 @@ usVcorpTDM <- TermDocumentMatrix(usVcorp)
 #save(usVcorpTDM, file = "usVcorpTDM.Rda")
 # reload the usVcorpTDM TDM
 #load("usVcorpTDM.Rda")
+
+class(usVcorpTDM)
+summary(usVcorpTDM)
+head(usVcorpTDM, n = 10)
