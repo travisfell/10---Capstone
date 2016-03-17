@@ -9,13 +9,13 @@ setwd("C:/Users/fellt/Desktop/Data Science/Coursera Data Science Specialization/
 
 # load up some libraries we'll probably need
 library(tm)
-library(SnowballC) # to help stemDocument work
 # load libraries to assist with multi threaded processing
 library(parallel, quietly=T)
 library(doParallel, quietly=T)
 # turn on parallel processing to help improve performance
 cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
+library(NLP)
 
 # load in Vcorpus and TDM if necessary
 
@@ -36,7 +36,7 @@ registerDoParallel(cluster)
 # expectations: Standard English sentence construction: noun-verb, lots of political topics
 # 
 
-inspect(usVcorpTDM)
+#inspect(usVcorpTDM)
 
 #what are most and least frequent terms?
 findFreqTerms(usVcorpTDM, 1000)
@@ -49,6 +49,7 @@ ord <- order(freq)
 freq[head(ord)]
 freq[tail(ord)]
 
+
 # save the usVcorpTDM.common TDM 
 #save(usVcorpTDM.common, file = "usVcorpTDM.common.Rda")
 # reload the usVcorpTDM TDM
@@ -56,8 +57,20 @@ freq[tail(ord)]
 
 # plot word frequencies
 
-# find foreign language words
 
-# filter out garbled text
+# find n-grams (2 and 3 word) and plot
+# see http://tm.r-forge.r-project.org/faq.html#Bigrams 
 
-# find n-grams (2 and 3 word)
+BigramTokenizer <-
+  function(x)
+    unlist(lapply(ngrams(words(x), 2), paste, collapse = " "), use.names = FALSE)
+
+usVcorpTDM.bigrams <- TermDocumentMatrix(usVcorp, control = list(tokenize = BigramTokenizer))
+dim(usVcorpTDM.bigrams)
+usVcorpTDM.bigrams.common <- removeSparseTerms(usVcorpTDM.bigrams, .999)
+dim(usVcorpTDM.bigrams.common)
+freq.bigram <- rowSums(as.matrix((usVcorpTDM.bigrams.common)))
+length(freq.bigram)
+ord <- order(freq.bigram )
+freq.bigram[head(ord)]
+freq.bigram[tail(ord)]

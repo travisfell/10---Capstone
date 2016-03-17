@@ -102,9 +102,10 @@ usVcorp <- tm_map(usVcorp, removeWords, stopwords("english"))
 usVcorp <- tm_map(usVcorp, stripWhitespace)
 usVcorp <- tm_map(usVcorp, removeNumbers)
 #Filter for profanity
-bad <- read.csv("bad.csv", header = TRUE, strip.white = TRUE, stringsAsFactors = FALSE) # see http://www.cs.cmu.edu/~biglou/resources/bad-words.txt
-usVcorp <- tm_map(usVcorp, removeWords, bad$words)
+  bad <- read.csv("bad.csv", header = TRUE, strip.white = TRUE, stringsAsFactors = FALSE) # see http://www.cs.cmu.edu/~biglou/resources/bad-words.txt
+  usVcorp <- tm_map(usVcorp, removeWords, bad$words)
 usVcorp <- tm_map(usVcorp, stemDocument)
+usVcorp = tm_map(usVcorp, content_transformer(function(x) iconv(x, to="ASCII", sub=" "))) #remove odd characters
 
 # save the usVcorp corpus 
 #save(usVcorp, file = "usVcorp.Rda")
