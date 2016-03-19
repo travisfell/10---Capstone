@@ -8,7 +8,6 @@
 setwd("C:/Users/fellt/Desktop/Data Science/Coursera Data Science Specialization/10 - Capstone")
 
 # load up some libraries we'll probably need
-library(R.utils)
 library(tm)
 library(SnowballC) # to help stemDocument work
 # load libraries to assist with multi threaded processing
@@ -86,10 +85,12 @@ usNewsVcorp <- VCorpus(DataframeSource(usNewsSmall), list(reader = readPlain))
 usTwitVcorp <- VCorpus(DataframeSource(usTwitSmall), list(reader = readPlain))
 
 usVcorp <- c(usBlogsVcorp, usNewsVcorp, usTwitVcorp)
+# created usVcorp_bkup after this step
 
 rm(usBlogsVcorp)
 rm(usNewsVcorp)
 rm(usTwitVcorp)
+# created usVcorp_bkup after this step
 
 class(usVcorp)
 summary(usVcorp)
@@ -123,3 +124,21 @@ usVcorpTDM <- TermDocumentMatrix(usVcorp)
 class(usVcorpTDM)
 summary(usVcorpTDM)
 head(usVcorpTDM, n = 10)
+
+
+
+# how to handle contractions? 
+# find distinct list of all words with appostrophes
+# create gsub routines for those words, run before the removePunctuation step
+usVcorp_bkup2 <- usVcorp_bkup
+usVcorp_bkup2 <- tm_map(usVcorp_bkup2, content_transformer(tolower))
+usVcorp_bkup2 <- tm_map(usVcorp_bkup2, content_transformer(gsub), pattern = "you're", replacement = "you are", x = x, ignore.case = TRUE))
+usVcorp_bkup2 <- tm_map(usVcorp_bkup2, content_transformer(gsub), pattern = "i'll", replacement = " will", ignore.case = TRUE)
+usVcorp_bkup2 <- tm_map(usVcorp_bkup2, content_transformer(gsub), pattern = "we'll", replacement = "we will", ignore.case = TRUE)
+usVcorp_bkup2 <- tm_map(usVcorp_bkup2, content_transformer(gsub), pattern = "it's", replacement = "it is", ignore.case = TRUE)
+usVcorp_bkup2 <- tm_map(usVcorp_bkup2, content_transformer(gsub), pattern = "i'm", replacement = "i am", ignore.case = TRUE)
+usVcorpTDMRaw <- TermDocumentMatrix(usVcorp_bkup2)
+rawTerms <- Terms(usVcorpTDMRaw)
+grep("you're", rawTerms, value = TRUE, ignore.case = TRUE)
+rawTerms <- gsub("'ll", " will", rawTerms)
+

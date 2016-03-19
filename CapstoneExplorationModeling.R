@@ -16,6 +16,8 @@ library(doParallel, quietly=T)
 cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
 library(NLP)
+library(ggplot2)
+library(data.table)
 
 # load in Vcorpus and TDM if necessary
 
@@ -44,11 +46,13 @@ dim(usVcorpTDM)
 usVcorpTDM.common <- removeSparseTerms(usVcorpTDM, .999)
 dim(usVcorpTDM.common)
 freq <- rowSums(as.matrix((usVcorpTDM.common)))
-length(freq)
 ord <- order(freq)
 freq[head(ord)]
-freq[tail(ord)]
+wordFreq <- freq[tail(ord, n = 20)]
 
+#transform to data frame
+wordFreq <- as.data.frame(wordFreq)
+wordFreq <- setDT(wordFreq, keep.rownames = TRUE)
 
 # save the usVcorpTDM.common TDM 
 #save(usVcorpTDM.common, file = "usVcorpTDM.common.Rda")
@@ -57,6 +61,14 @@ freq[tail(ord)]
 
 # plot word frequencies
 
+# plot 20 most frequent words
+g <- ggplot(wordFreq, aes(rn, wordFreq))
+g <- g + geom_bar(stat = "identity")
+g <- g + ggtitle("Word Frequency")
+g <- g + ylab("Frequency")
+g <- g + xlab ("Words")
+g <- g + theme(axis.text.x = element_text(angle = 45))
+g
 
 # find n-grams (2 and 3 word) and plot
 # see http://tm.r-forge.r-project.org/faq.html#Bigrams 
@@ -66,11 +78,50 @@ BigramTokenizer <-
     unlist(lapply(ngrams(words(x), 2), paste, collapse = " "), use.names = FALSE)
 
 usVcorpTDM.bigrams <- TermDocumentMatrix(usVcorp, control = list(tokenize = BigramTokenizer))
-dim(usVcorpTDM.bigrams)
+#dim(usVcorpTDM.bigrams)
 usVcorpTDM.bigrams.common <- removeSparseTerms(usVcorpTDM.bigrams, .999)
-dim(usVcorpTDM.bigrams.common)
+#dim(usVcorpTDM.bigrams.common)
 freq.bigram <- rowSums(as.matrix((usVcorpTDM.bigrams.common)))
-length(freq.bigram)
-ord <- order(freq.bigram )
+ord <- order(freq.bigram)
 freq.bigram[head(ord)]
-freq.bigram[tail(ord)]
+bigramFreq <- freq.bigram[tail(ord, n = 20)]
+
+#transform data
+bigramFreq <- as.data.frame(bigramFreq)
+bigramFreq <- setDT(bigramFreq, keep.rownames = TRUE)
+
+# plot 20 most frequent bigrams
+b <- ggplot(bigramFreq, aes(rn, bigramFreq))
+b <- b + geom_bar(stat = "identity")
+b <- b + ggtitle("Bigram Frequency")
+b <- b + ylab("Frequency")
+b <- b + xlab ("Bigrams")
+b <- b + theme(axis.text.x = element_text(angle = 45))
+b
+
+# trigrams
+TrigramTokenizer <-
+  function(x)
+    unlist(lapply(ngrams(words(x), 3), paste, collapse = " "), use.names = FALSE)
+#START HERE
+usVcorpTDM.trigrams <- TermDocumentMatrix(usVcorp, control = list(tokenize = TrigramTokenizer))
+#dim(usVcorpTDM.trigrams)
+usVcorpTDM.trigrams.common <- removeSparseTerms(usVcorpTDM.trigrams, .005)
+#dim(usVcorpTDM.trigrams.common)
+freq.trigram <- rowSums(as.matrix((usVcorpTDM.trigrams)))
+ord <- order(freq.trigram)
+freq.trigram[head(ord)]
+trigramFreq <- freq.trigram[tail(ord, n = 20)]
+
+#transform data
+trigramFreq <- as.data.frame(trigramFreq)
+trigramFreq <- setDT(trigramFreq, keep.rownames = TRUE)
+
+# plot 20 most frequent bigrams
+t <- ggplot(trigramFreq, aes(rn, trigramFreq))
+t <- t + geom_bar(stat = "identity")
+t <- t + ggtitle("Trigram Frequency")
+t <- t + ylab("Frequency")
+t <- t + xlab ("Trigrams")
+t <- t + theme(axis.text.x = element_text(angle = 45))
+t
