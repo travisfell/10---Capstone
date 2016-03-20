@@ -1,0 +1,112 @@
+---
+title: "Data Science Capstone Project: Week 2 Milestone Report"
+author: "Travis Fell"
+date: "March 19, 2016"
+output: html_document
+---
+```{r echo = FALSE, warning=FALSE, message=FALSE}
+#Prep environment for analysis
+library(R.utils)
+library(tm)
+library(SnowballC)
+library(ggplot2)
+library(parallel, quietly=T)
+library(doParallel, quietly=T)
+# turn on parallel processing to help improve performance
+cluster <- makeCluster(detectCores() - 1)
+registerDoParallel(cluster)
+```
+
+## Introduction
+Show word counts, line counts, basic data tables
+Plot features of the data
+Exploratory analysis
+Interesting findings so far
+Prediction model concerns
+
+Below are the line counts for the three US files. 
+
+* The US blogs file has 899,288 lines and approximately 4,799,000 words. 
+
+* The US news file has 1,010,242 lines and approximately 886,300 words.
+
+* The US Twitter file has 2,360,148 lines and approximately 4,424,800 words. 
+
+Note: The analysis sampled 1% of the text files. Thus, the word counts above are estimates based on the sampled files.  
+
+## Exploratory Analysis
+To prepare the text files for exploratory analysis, I used the following code to 
+
+1. Combined the three files. 
+
+  + Addressed some issues with apostrophes in the text
+
+2. Converted the files to a corpus. 
+
+3. Executed common pre-processing steps.
+
+4. Created a TermDocumentMatrix. 
+
+Upon completing the aforementioned pre-processing, I found the following frequencies of words, bigrams and trigrams (top 30 of each shown). 
+
+Top 30 single terms:
+![](WordFreq.png) 
+
+Top 30 bigrams: 
+![](bigramFreq.png) 
+
+Top 30 trigrams
+![](trigramFreq.png) 
+
+There is still some clean up required for handling contractions. 
+
+## Thoughts on the Prediction Model
+My current thoughts on how to build the keystroke prediction algorithm required for the final deliverable are something like this:
+
+As the user keys in characters, compare the string to the terms isolated from the corpus to see if the term exists. 
+
+If the word does exist in the corpus:
+
+1. Compare it to the known bigrams. 
+  
+2. If the word matches any bigrams on the first word, show the top 5 by frequency. 
+      
+   a. If the user selects one of the bigrams, compare that bigram to the list of trigrams
+      
+      * If the bigram matches the first two words of any trigrams, show the top 5 trigrams by frequency.
+      
+      * If the bigram does not match the first two words of any trigram, run a correlation on the bigram to other words in the corpus and show any that have a 80% correlation or higher. 
+        
+      * If the bigram does not correlate at or above 80% with any other term, present the top 5 most frequent words from an open source word frequency list that do not match any word in the corpus. 
+  
+  b. If the word does not match any bigrams, run a correlation on the word to other words in the corpus and show any that have a 80% correlation or higher.
+  
+  c. If the word does not correlate at or above 80% with any other term, present the top 5 most frequent words from an open source word frequency list that do not match any word in the corpus. 
+  
+3. If the word does not exist in the corpus, present top 5 most frequent words from an open source word frequency list that do not match any word in the corpus.
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

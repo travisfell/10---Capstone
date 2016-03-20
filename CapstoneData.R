@@ -8,6 +8,7 @@
 setwd("C:/Users/fellt/Desktop/Data Science/Coursera Data Science Specialization/10 - Capstone")
 
 # load up some libraries we'll probably need
+library(R.utils)
 library(tm)
 library(SnowballC) # to help stemDocument work
 # load libraries to assist with multi threaded processing
@@ -16,8 +17,6 @@ library(doParallel, quietly=T)
 # turn on parallel processing to help improve performance
 cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
-
-
 
 # Now, download the data using the link on the 
 # capstone webpage
@@ -30,9 +29,11 @@ usBlogs <- 'final/en_US/en_US.blogs.txt'
 usNews <- 'final/en_US/en_US.news.txt'
 usTwit <- 'final/en_US/en_US.twitter.txt'
 
+# get line count for each file
 usBlogsAll <- as.numeric(countLines(usBlogs))
 usNewsAll <- as.numeric(countLines(usNews))
 usTwitAll <- as.numeric(countLines(usTwit))
+
 
 # define function to read files and output smaller sample files
 subsamfile <- function(infile,outfile,k,header=T) {
@@ -70,7 +71,31 @@ close(file(usTwit))
 usBlogsSmall <- read.csv2(file = 'final-sample/en_US/en_US.blogs.sample.txt', stringsAsFactors = FALSE, header = FALSE, quote = "")
 usNewsSmall <- read.csv2(file = 'final-sample/en_US/en_US.news.sample.txt', stringsAsFactors = FALSE, header = FALSE, quote = "")
 usTwitSmall <- read.csv2(file = 'final-sample/en_US/en_US.twitter.sample.txt', stringsAsFactors = FALSE, header = FALSE, quote = "")
+usAllSmall <- rbind(usBlogsSmall, usNewsSmall, usTwitSmall)
 
+#get word count for each file
+usVcorpBlogs <- VCorpus(DataframeSource(usBlogsSmall), list(reader = readPlain))
+usVcorpBlogsTDM <- TermDocumentMatrix(usVcorpBlogs)
+length(Terms(usVcorpBlogsTDM)) # 47990
+
+usVcorpTwit <- VCorpus(DataframeSource(usTwitSmall), list(reader = readPlain))
+usVcorpTwitTDM <- TermDocumentMatrix(usVcorpTwit)
+length(Terms(usVcorpTwitTDM)) # 44248
+
+usVcorpTwit <- VCorpus(DataframeSource(usNewsSmall), list(reader = readPlain))
+usVcorpNewsTDM <- TermDocumentMatrix(usVcorpNews)
+length(Terms(usVcorpNewsTDM)) # 8863
+
+
+# search and replace certain contractions: 'd , 're , n't , 'll , 've , it's 
+head(usAllSmall[grepl("you d", usAllSmall[,1], ignore.case = TRUE) == TRUE,], n = 5)
+usAllSmall[grepl("ya'll", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("ya'll", "yall ", usAllSmall[grepl("ya'll", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
+usAllSmall[grepl("'ll ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("'ll ", " will ", usAllSmall[grepl("'ll ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
+usAllSmall[grepl("'d ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("'d ", " would ", usAllSmall[grepl("'d ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
+usAllSmall[grepl("'re ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("'re ", " are ", usAllSmall[grepl("'re ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
+usAllSmall[grepl("'ve ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("'ve ", " have ", usAllSmall[grepl("'ve ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
+usAllSmall[grepl("n't ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("n't ", " not ", usAllSmall[grepl("n't ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
+usAllSmall[grepl("it's ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("it's ", "it is ", usAllSmall[grepl("it's ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
 
 # identify tokens in each data set
 # 1. import and inspect the data using tm
@@ -80,24 +105,21 @@ usTwitSmall <- read.csv2(file = 'final-sample/en_US/en_US.twitter.sample.txt', s
 #                   , dbControl = list(dbName = "pcorpus.db", dbType = "DB1")
 #                  )
 
-usBlogsVcorp <- VCorpus(DataframeSource(usBlogsSmall), list(reader = readPlain))
-usNewsVcorp <- VCorpus(DataframeSource(usNewsSmall), list(reader = readPlain))
-usTwitVcorp <- VCorpus(DataframeSource(usTwitSmall), list(reader = readPlain))
+usVcorp <- VCorpus(DataframeSource(usAllSmall), list(reader = readPlain))
 
-usVcorp <- c(usBlogsVcorp, usNewsVcorp, usTwitVcorp)
-# created usVcorp_bkup after this step
-
-rm(usBlogsVcorp)
-rm(usNewsVcorp)
-rm(usTwitVcorp)
-# created usVcorp_bkup after this step
-
+# created usVcorp_bkup after this step, usVcorp_bkup <- usVcorp
+#usVcorp <- usVcorp_bkup
 class(usVcorp)
-summary(usVcorp)
 inspect(usVcorp)
 
 # 2. transform the data
 usVcorp <- tm_map(usVcorp, content_transformer(tolower))
+# transform common contractions
+#  usVcorp <- tm_map(usVcorp, function(x) {gsub("'re ", " are ", x)})
+#  usVcorp <- tm_map(usVcorp, function(x) {gsub("'ll ", " will ", x)})
+#  usVcorp <- tm_map(usVcorp, function(x) {gsub("'d ", " would ", x)})
+#  usVcorp <- tm_map(usVcorp, function(x) {gsub("it's", "it is", x)})
+#  usVcorp <- tm_map(usVcorp, function(x) {gsub(" i'm ", " i am ", x)})
 usVcorp <- tm_map(usVcorp, removePunctuation)
 usVcorp <- tm_map(usVcorp, removeWords, stopwords("english")) 
 usVcorp <- tm_map(usVcorp, stripWhitespace)
@@ -105,15 +127,18 @@ usVcorp <- tm_map(usVcorp, removeNumbers)
 #Filter for profanity
   bad <- read.csv("bad.csv", header = TRUE, strip.white = TRUE, stringsAsFactors = FALSE) # see http://www.cs.cmu.edu/~biglou/resources/bad-words.txt
   usVcorp <- tm_map(usVcorp, removeWords, bad$words)
+#usVcorp = tm_map(usVcorp, content_transformer(function(x) iconv(x, to="ASCII", sub=" "))) #remove odd characters
+usVcorp = tm_map(usVcorp, function(x) iconv(x, to="ASCII", sub=" ")) #remove odd characters
 usVcorp <- tm_map(usVcorp, stemDocument)
-usVcorp = tm_map(usVcorp, content_transformer(function(x) iconv(x, to="ASCII", sub=" "))) #remove odd characters
+usVcorp <- tm_map(usVcorp, PlainTextDocument)
+
 
 # save the usVcorp corpus 
 #save(usVcorp, file = "usVcorp.Rda")
 # reload the usVcorp corpus
 #load("usVcorp.Rda")
                           
-# 4. Build TDM
+# 3. Build TDM
 usVcorpTDM <- TermDocumentMatrix(usVcorp)
 
 # save the usVcorpTDM TDM 
@@ -122,8 +147,7 @@ usVcorpTDM <- TermDocumentMatrix(usVcorp)
 #load("usVcorpTDM.Rda")
 
 class(usVcorpTDM)
-summary(usVcorpTDM)
-head(usVcorpTDM, n = 10)
+inspect(usVcorpTDM)
 
 
 
