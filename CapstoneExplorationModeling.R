@@ -33,19 +33,21 @@ library(Rtools)
 
 # inspect Term Document Matrix 
 inspect(usVcorpTDM)
+dim(usVcorpTDM)
 terms <- Terms(usVcorpTDM)
 length(terms)
 unique(Encoding(terms)) # ensure no UTF-8 or non-ASCII text
-
 #what are most and least frequent terms?
 findFreqTerms(usVcorpTDM, 1000)
-dim(usVcorpTDM)
+#remove sparse terms
 usVcorpTDM.common <- removeSparseTerms(usVcorpTDM, .999)
 dim(usVcorpTDM.common)
+
+# prep the TDM for further analysis
 freq <- rowSums(as.matrix((usVcorpTDM.common)))
 ord <- order(freq)
-freq[head(ord)]
-freq[tail(ord, n = 30)]
+#freq[head(ord)]
+#freq[tail(ord, n = 30)]
 wordFreq <- freq[tail(ord, n = 30)]
 commonTerms <- Terms(usVcorpTDM.common)
 length(commonTerms)
@@ -136,8 +138,7 @@ freq.trigram[head(ord)]
 freq.trigram[tail(ord, n = 30)]
 trigramFreq <- freq.trigram[tail(ord, n = 30)]
 
-
-#transform data
+#transform data for plotting
 trigramFreq <- as.data.frame(trigramFreq)
 trigramFreq <- setDT(trigramFreq, keep.rownames = TRUE)
 trigramFreq <- trigramFreq[order(trigramFreq, decreasing = TRUE),]

@@ -24,7 +24,7 @@ download.file("https://eventing.coursera.org/api/redirectStrict/VYmaDK_AgFQF7Lxt
     destfile = 'capstone.zip')
 
 # read in random sample of the data for exploration and cleaning tasks
-# find number of lines in each file
+# assign document paths to variables for later use
 usBlogs <- 'final/en_US/en_US.blogs.txt'
 usNews <- 'final/en_US/en_US.news.txt'
 usTwit <- 'final/en_US/en_US.twitter.txt'
@@ -89,7 +89,8 @@ length(Terms(usVcorpNewsTDM)) # 8863
 
 # search and replace certain contractions: 'd , 're , n't , 'll , 've , it's 
 head(usAllSmall[grepl("you d", usAllSmall[,1], ignore.case = TRUE) == TRUE,], n = 5)
-usAllSmall[grepl("ya'll", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("ya'll", "yall ", usAllSmall[grepl("ya'll", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
+usAllSmall[grepl("ya'll", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("ya'll", "yall ", usAllSmall[grepl("ya'll", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE) #need to resolve this edge case before handling other contractions of this type
+usAllSmall[grepl("can't", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("can't", "cannot ", usAllSmall[grepl("can't", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE) #need to resolve this edge case before handling other contractions of this type
 usAllSmall[grepl("'ll ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("'ll ", " will ", usAllSmall[grepl("'ll ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
 usAllSmall[grepl("'d ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("'d ", " would ", usAllSmall[grepl("'d ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
 usAllSmall[grepl("'re ", usAllSmall[,1], ignore.case = TRUE) == TRUE,] <- gsub("'re ", " are ", usAllSmall[grepl("'re ", usAllSmall[,1], ignore.case = TRUE) == TRUE,], ignore.case = TRUE)
