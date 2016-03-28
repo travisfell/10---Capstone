@@ -16,6 +16,7 @@ library(doParallel, quietly=T)
 # turn on parallel processing to help improve performance
 cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
+set.seed(1003)
 
 # acquire data
 if(!file.exists("Coursera-SwiftKey.zip")){
@@ -63,18 +64,36 @@ class(usVcorpQ)
 # load("usVcorpQ.Rda")
 rm(usAllSmall)
 
-# prep tokens
+# prep corpus
+usVcorpQ <- toLower(usVcorpQ)
+
+# create tokens
 unigramtokens <- tokenize(usVcorpQ, verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE)
-bigramtokens <- tokenize(usVcorpQ,  verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE, ngrams = 2)
+bigramtokens <- tokenize(usVcorpQ, verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE, ngrams = 2)
 trigramtokens <- tokenize(usVcorpQ, verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE, ngrams = 3)
 rm(usVcorpQ)
 
 # create DFM for each and and apply profanity filtering
 bad <- read.csv("bad.csv", header = TRUE, strip.white = TRUE, stringsAsFactors = FALSE) #vector of profanity words 
+bad <- as.character(bad$words) # need to convert data frame columnn to a character vector for dfm to work
 unigrams <- dfm(unigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=c(bad, stopwords()))
-bigrams <- dfm(bigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=c(bad, stopwords()))
-trigrams <- dfm(trigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=c(bad, stopwords()))
+bigrams <- dfm(bigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
+trigrams <- dfm(trigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
+# clean up workspace
+rm(unigramtokens)
+rm(bigramtokens)
+rm(trigramtokens)
 
+# explore and validate dfms
+nfeature(unigrams)
 topfeatures(unigrams)
+nfeature(bigrams)
 topfeatures(bigrams)
+nfeature(trigrams)
+topfeatures(trigrams)
+ndoc(unigrams)
 
+# save the dfms
+save(unigrams, file = "unigrams.Rda")
+save(bigrams, file = "bigrams.Rda")
+save(trigrams, file = "trigrams.Rda")
