@@ -5,17 +5,23 @@
 # prep the environment
 setwd("C:/Users/fellt/Desktop/Data Science/Coursera Data Science Specialization/10 - Capstone")
 library(tm)
-library(SnowballC) # to help stemDocument work
-library(stringi)
-library(Matrix)
-library(data.table)
-library(quanteda)
+#load quanteda and dependencies
+  library(SnowballC) 
+  library(stringi)
+  library(Matrix)
+  library(data.table)
+  library(quanteda)
+#load markovchain and dependencies
+  library(expm)
+  library(igraph)
+  library(matlab)
+  library(markovchain)
 # load libraries to assist with multi threaded processing
-library(parallel, quietly=T)
-library(doParallel, quietly=T)
-# turn on parallel processing to help improve performance
-cluster <- makeCluster(detectCores() - 1)
-registerDoParallel(cluster)
+  library(parallel, quietly=T)
+  library(doParallel, quietly=T)
+  # turn on parallel processing to help improve performance
+  cluster <- makeCluster(detectCores() - 1)
+  registerDoParallel(cluster)
 set.seed(1003)
 
 # acquire data
