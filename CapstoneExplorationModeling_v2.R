@@ -45,6 +45,8 @@ bifreq <- colSums(bigrams)
 bifreq <- bifreq[order(bifreq, decreasing = TRUE)] 
 trifreq <- colSums(trigrams)
 trifreq <- trifreq[order(trifreq, decreasing = TRUE)]
+fourfreq <- colSums(fourgrams)
+fourfreq <- fourfreq[order(fourfreq, decreasing = TRUE)]
 
 # remember, bigrams and trigrams have "_" separator. To remove '_' characters from bigrams and trigrams for matching: 
 # names(bifreq) <- gsub("_", " ", names(bifreq))
@@ -52,32 +54,44 @@ trifreq <- trifreq[order(trifreq, decreasing = TRUE)]
 
 # III. Experiment with the model
 
-# A. create Maximum Likelihood Estimate matrix for known strings in corpus:
-# text 1: "etc. noel had in mind a girl" 
-# text 2: "just purchase the product and buy any or all of the flavors"
-# text 3: "this time with the left over egg whites i made single serve mini pavlova's"
+# A. create Maximum Likelihood Estimate matrix
+
+# 1. match input trigram to first three words of fourgram list
+# 1a. if match present, return list with frequency 
+# 2. match last two terms of input trigram to trigram list
+# 2a. if match present, return list with frequency
+# 3. match last term of input trigram to bigram list
+# 3a. if match present, return list with frequency
+# 4. show top 10 unigrams by frequency
+
+# see this discussion: https://www.coursera.org/learn/data-science-project/module/VNKmf/discussions/HmPU3OvyEeWfwAohgaM63Q
+# also, read up on interpolation and Kneser - Ney smoothing (account for context)
+
+inputTrigram <- "^a_case_of"
+fourfreq[grep(inputTrigram, names(fourfreq), ignore.case = TRUE)]
+space1 <- regexpr(pattern ='_',inputTrigram)[1] #find location of first space
+inputBigram <- paste("^", substring(inputTrigram, space1 + 1, nchar(inputTrigram)), sep = "")
+trifreq[grep(inputBigram, names(trifreq), ignore.case = TRUE)]
+space2 <- regexpr(pattern ='_',inputBigram)[1] 
+inputUnigram <- paste("^", substring(inputBigram, space2 + 1, nchar(inputBigram)), sep = "")
+head(bifreq[grep(inputUnigram, names(bifreq), ignore.case = TRUE)], n = 100)
+head(unifreq, n = 10)
+# include code to match quiz options to model results
+
+
 
 # loop through string to find all bigrams therein and calculate probabilities
 # calculate P(word 2 follows word 1): find count of all word1-word2 bigrams/divide by count of all word1-wordX bigrams
-
 w1 <- "a" #x
 w2 <- "girl" #y
 trainbigram <- paste(w1, w2, sep = "_")
-gramfreq <- length(grep(trainbigram, names(bifreq)))
-gramall <- length(grep(w1, names(bifreq)))
+gramfreq <- length(grep(trainbigram, names(trifreq)))
+gramall <- length(grep(trainbigram, names(trifreq)))
 prob <- gramfreq/gramall
 # apply log tranformation to prevent numerical underflow
 # add all log probs then use exp fxn to come back to linear space
 prob <- log10(prob)
 
-# cumulatively store probabilities
-
-# at end of input string, add existing prob to highest prob of bigrams starting w/
-# last word of input string
-
-# if not matched, go back to the first bigram and find 2nd most likely match, and rebuild
-
-# keep working through all possible matches to the bigram list, this should cumulatively increase the probability
 
 
 

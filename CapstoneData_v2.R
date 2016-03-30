@@ -54,7 +54,7 @@ rm(usTwitterSmall)
 
 # save the usAllSmall collection of documents 
 # save(usAllSmall, file = "usAllSmall.rda")
-# reload the usVcorp corpus
+# reload the collection
 # load("usAllSmall.Rda")
 
 # clean up non-standard charaters
@@ -77,6 +77,7 @@ usVcorpQ <- toLower(usVcorpQ)
 unigramtokens <- tokenize(usVcorpQ, verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE)
 bigramtokens <- tokenize(usVcorpQ, verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE, ngrams = 2)
 trigramtokens <- tokenize(usVcorpQ, verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE, ngrams = 3)
+fourgramtokens <- tokenize(usVcorpQ, verbose=TRUE, removeNumbers=TRUE,removePunct=TRUE, removeTwitter = TRUE, ngrams = 4)
 rm(usVcorpQ)
 
 # create DFM for each and and apply profanity filtering
@@ -85,10 +86,12 @@ bad <- as.character(bad$words) # need to convert data frame columnn to a charact
 unigrams <- dfm(unigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=c(bad, stopwords()))
 bigrams <- dfm(bigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
 trigrams <- dfm(trigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
+fourgrams <- dfm(fourgramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
 # clean up workspace
 rm(unigramtokens)
 rm(bigramtokens)
 rm(trigramtokens)
+rm(fourgramtokens)
 
 # explore and validate dfms
 nfeature(unigrams)
@@ -97,9 +100,12 @@ nfeature(bigrams)
 topfeatures(bigrams)
 nfeature(trigrams)
 topfeatures(trigrams)
+nfeature(fourgrams)
+topfeatures(fourgrams)
 ndoc(unigrams)
 
 # save the dfms
 save(unigrams, file = "unigrams.Rda")
 save(bigrams, file = "bigrams.Rda")
 save(trigrams, file = "trigrams.Rda")
+save(fourgrams, file = "fourgrams.Rda")
