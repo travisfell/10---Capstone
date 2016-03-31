@@ -27,10 +27,15 @@ library(quanteda)
 library(ggplot2)
 set.seed(1003)
 
+right = function (string, char){
+  substr(string,nchar(string)-(char-1),nchar(string))
+}
+
 # load in n-grams objects if needed
 # load("unigrams.Rda")
 # load("bigrams.Rda")
 # load("trigrams.Rda")
+# load("fougrams.Rda")
 
 # If needed, find and strip sparse terms here
 #sparsethreshold <- round(ndoc(unigrams) * (1 - 0.999))
@@ -67,16 +72,46 @@ fourfreq <- fourfreq[order(fourfreq, decreasing = TRUE)]
 # see this discussion: https://www.coursera.org/learn/data-science-project/module/VNKmf/discussions/HmPU3OvyEeWfwAohgaM63Q
 # also, read up on interpolation and Kneser - Ney smoothing (account for context)
 
-inputTrigram <- "^a_case_of"
-fourfreq[grep(inputTrigram, names(fourfreq), ignore.case = TRUE)]
+inputTrigram <- "^helps_reduce_your_" # besure to include trailing underbar
+fourfreqmatch <- fourfreq[grep(inputTrigram, names(fourfreq), ignore.case = TRUE)]
 space1 <- regexpr(pattern ='_',inputTrigram)[1] #find location of first space
 inputBigram <- paste("^", substring(inputTrigram, space1 + 1, nchar(inputTrigram)), sep = "")
-trifreq[grep(inputBigram, names(trifreq), ignore.case = TRUE)]
+trifreqmatch <- trifreq[grep(inputBigram, names(trifreq), ignore.case = TRUE)]
 space2 <- regexpr(pattern ='_',inputBigram)[1] 
 inputUnigram <- paste("^", substring(inputBigram, space2 + 1, nchar(inputBigram)), sep = "")
-head(bifreq[grep(inputUnigram, names(bifreq), ignore.case = TRUE)], n = 100)
-head(unifreq, n = 10)
-# include code to match quiz options to model results
+bifreqmatch <- bifreq[grep(inputUnigram, names(bifreq), ignore.case = TRUE)]
+#head(unifreq, n = 10)
+
+quiztext <- c("sleepiness", "happiness", "hunger", "stress")
+
+matchfreq <- optionmatch(inputTrigram, fourfreqmatch, quiztext)
+matchfreq
+matchfreq <- c(matchfreq, optionmatch(inputBigram, trifreqmatch, quiztext))
+matchfreq
+matchfreq <- c(matchfreq, optionmatch(inputUnigram, bifreqmatch, quiztext))
+matchfreq
+matchfreq <- c(matchfreq, optionmatch(inputUnigram, unifreq, quiztext))
+matchfreq[order(matchfreq, decreasing = TRUE)] #need to merge like terms and drop NoMatch
+
+
+optionmatch <- function(inputNgram, freqVector, options) {
+  # match quiz options to model results; do not use for unigrams?
+  #parse out last word of ngram after last "_" character, retain frequency
+  ngramlength <- nchar(gsub("\\^", "", inputNgram)) #parse out leading caret if present
+  names(freqVector) <- right(names(freqVector), nchar(names(freqVector)) - ngramlength)
+  # stem the quiz options for better matching to ngram lists
+  options <- wordstem(options)
+  # match quiztext to freqmatch, capture matches and prob or display "no matches"
+  matchidx <- match(options, names(freqVector), nomatch = 0)
+  if (sum(matchidx) > 0) {
+    freqVector[matchidx] #return matching terms and frequencies
+    }
+    else { # return blank vector value to inform user of no matches
+      nomatch <- as.vector(0)
+      names(nomatch) <- "NoMatch"
+      nomatch
+    }
+}
 
 
 
