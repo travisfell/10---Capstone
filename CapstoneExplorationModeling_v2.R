@@ -26,16 +26,17 @@ library(quanteda)
   registerDoParallel(cluster)
 library(ggplot2)
 set.seed(1003)
+options(scipen=999) # turn off scientific notation
 
 right = function (string, char){
   substr(string,nchar(string)-(char-1),nchar(string))
 }
 
 # load in n-grams objects if needed
-# load("unigrams.Rda")
-# load("bigrams.Rda")
-# load("trigrams.Rda")
-# load("fougrams.Rda")
+ load("unigrams.Rda")
+ load("bigrams.Rda")
+ load("trigrams.Rda")
+ load("fourgrams.Rda")
 
 # If needed, find and strip sparse terms here
 #sparsethreshold <- round(ndoc(unigrams) * (1 - 0.999))
@@ -56,6 +57,11 @@ fourfreq <- fourfreq[order(fourfreq, decreasing = TRUE)]
 # remember, bigrams and trigrams have "_" separator. To remove '_' characters from bigrams and trigrams for matching: 
 # names(bifreq) <- gsub("_", " ", names(bifreq))
 
+#convert frequencies to probabilities
+unifreq <- unifreq/length(unifreq)
+bifreq <- bifreq/length(bifreq)
+trifreq <- trifreq/length(trifreq)
+fourfreq <- fourfreq/length(fourfreq)
 
 # III. Experiment with the model
 
@@ -72,7 +78,7 @@ fourfreq <- fourfreq[order(fourfreq, decreasing = TRUE)]
 # see this discussion: https://www.coursera.org/learn/data-science-project/module/VNKmf/discussions/HmPU3OvyEeWfwAohgaM63Q
 # also, read up on interpolation and Kneser - Ney smoothing (account for context)
 
-inputTrigram <- "^helps_reduce_your_" # besure to include trailing underbar
+inputTrigram <- "^of_Adam_Sandler_" # be sure to include trailing underbar
 fourfreqmatch <- fourfreq[grep(inputTrigram, names(fourfreq), ignore.case = TRUE)]
 space1 <- regexpr(pattern ='_',inputTrigram)[1] #find location of first space
 inputBigram <- paste("^", substring(inputTrigram, space1 + 1, nchar(inputTrigram)), sep = "")
@@ -80,19 +86,15 @@ trifreqmatch <- trifreq[grep(inputBigram, names(trifreq), ignore.case = TRUE)]
 space2 <- regexpr(pattern ='_',inputBigram)[1] 
 inputUnigram <- paste("^", substring(inputBigram, space2 + 1, nchar(inputBigram)), sep = "")
 bifreqmatch <- bifreq[grep(inputUnigram, names(bifreq), ignore.case = TRUE)]
-#head(unifreq, n = 10)
 
-quiztext <- c("sleepiness", "happiness", "hunger", "stress")
-
+quiztext <- c("movies", "novels", "pictures", "stories")
 matchfreq <- optionmatch(inputTrigram, fourfreqmatch, quiztext)
-matchfreq
-matchfreq <- c(matchfreq, optionmatch(inputBigram, trifreqmatch, quiztext))
-matchfreq
 matchfreq <- c(matchfreq, optionmatch(inputUnigram, bifreqmatch, quiztext))
-matchfreq
 matchfreq <- c(matchfreq, optionmatch(inputUnigram, unifreq, quiztext))
-matchfreq[order(matchfreq, decreasing = TRUE)] #need to merge like terms and drop NoMatch
-
+matchfreq <- matchfreq[matchfreq > 0] #drop NoMatch
+matchfreq <- tapply(unlist(matchfreq), names(unlist(matchfreq)), sum) #group by term and sum
+matchfreq <- matchfreq[order(matchfreq, decreasing = TRUE)] # order by probability
+matchfreq
 
 optionmatch <- function(inputNgram, freqVector, options) {
   # match quiz options to model results; do not use for unigrams?
