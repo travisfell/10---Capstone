@@ -83,15 +83,15 @@ rm(usVcorpQ)
 # create DFM for each and and apply profanity filtering
 bad <- read.csv("bad.csv", header = TRUE, strip.white = TRUE, stringsAsFactors = FALSE) #vector of profanity words 
 bad <- as.character(bad$words) # need to convert data frame columnn to a character vector for dfm to work
-unigrams <- dfm(unigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=c(bad, stopwords()))
-bigrams <- dfm(bigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
-trigrams <- dfm(trigramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
-fourgrams <- dfm(fourgramtokens, verbose=TRUE, toLower=TRUE, stem = TRUE, ignoredFeatures=bad)
-# clean up workspace
+unigrams <- dfm(unigramtokens, verbose=TRUE, toLower=TRUE, ignoredFeatures=bad) #ignoredFeatures=c(bad, stopwords())) # should keep stop words to be consistent & help w/KN
 rm(unigramtokens)
+bigrams <- dfm(bigramtokens, verbose=TRUE, toLower=TRUE, ignoredFeatures=bad)
 rm(bigramtokens)
+trigrams <- dfm(trigramtokens, verbose=TRUE, toLower=TRUE, ignoredFeatures=bad)
 rm(trigramtokens)
+fourgrams <- dfm(fourgramtokens, verbose=TRUE, toLower=TRUE, ignoredFeatures=bad)
 rm(fourgramtokens)
+rm(bad)
 
 # explore and validate dfms
 nfeature(unigrams)

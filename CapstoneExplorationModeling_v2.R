@@ -58,43 +58,33 @@ fourfreq <- fourfreq[order(fourfreq, decreasing = TRUE)]
 # names(bifreq) <- gsub("_", " ", names(bifreq))
 
 #convert frequencies to probabilities
-unifreq <- unifreq/length(unifreq)
-bifreq <- bifreq/length(bifreq)
-trifreq <- trifreq/length(trifreq)
-fourfreq <- fourfreq/length(fourfreq)
+uniprob <- unifreq/length(unifreq)
+biprob <- bifreq/length(bifreq)
+triprob <- trifreq/length(trifreq)
+fourprob <- fourfreq/length(fourfreq)
 
 # III. Experiment with the model
 
 # A. create Maximum Likelihood Estimate matrix
-
-# 1. match input trigram to first three words of fourgram list
-# 1a. if match present, return list with frequency 
-# 2. match last two terms of input trigram to trigram list
-# 2a. if match present, return list with frequency
-# 3. match last term of input trigram to bigram list
-# 3a. if match present, return list with frequency
-# 4. show top 10 unigrams by frequency
-
 # see this discussion: https://www.coursera.org/learn/data-science-project/module/VNKmf/discussions/HmPU3OvyEeWfwAohgaM63Q
-# also, read up on interpolation and Kneser - Ney smoothing (account for context)
 
 inputTrigram <- "^of_Adam_Sandler_" # be sure to include trailing underbar
-fourfreqmatch <- fourfreq[grep(inputTrigram, names(fourfreq), ignore.case = TRUE)]
+fourprobmatch <- fourprob[grep(inputTrigram, names(fourprob), ignore.case = TRUE)]
 space1 <- regexpr(pattern ='_',inputTrigram)[1] #find location of first space
 inputBigram <- paste("^", substring(inputTrigram, space1 + 1, nchar(inputTrigram)), sep = "")
-trifreqmatch <- trifreq[grep(inputBigram, names(trifreq), ignore.case = TRUE)]
+triprobmatch <- triprob[grep(inputBigram, names(triprob), ignore.case = TRUE)]
 space2 <- regexpr(pattern ='_',inputBigram)[1] 
 inputUnigram <- paste("^", substring(inputBigram, space2 + 1, nchar(inputBigram)), sep = "")
-bifreqmatch <- bifreq[grep(inputUnigram, names(bifreq), ignore.case = TRUE)]
+biprobmatch <- biprob[grep(inputUnigram, names(biprob), ignore.case = TRUE)]
 
 quiztext <- c("movies", "novels", "pictures", "stories")
-matchfreq <- optionmatch(inputTrigram, fourfreqmatch, quiztext)
-matchfreq <- c(matchfreq, optionmatch(inputUnigram, bifreqmatch, quiztext))
-matchfreq <- c(matchfreq, optionmatch(inputUnigram, unifreq, quiztext))
-matchfreq <- matchfreq[matchfreq > 0] #drop NoMatch
-matchfreq <- tapply(unlist(matchfreq), names(unlist(matchfreq)), sum) #group by term and sum
-matchfreq <- matchfreq[order(matchfreq, decreasing = TRUE)] # order by probability
-matchfreq
+matchprob <- optionmatch(inputTrigram, fourprobmatch, quiztext)
+matchprob <- c(matchprob, optionmatch(inputUnigram, biprobmatch, quiztext))
+matchprob <- c(matchprob, optionmatch(inputUnigram, uniprob, quiztext))
+matchprob <- matchprob[matchprob > 0] #drop NoMatch
+matchprob <- tapply(unlist(matchprob), names(unlist(matchprob)), sum) #group by term and sum
+matchprob <- matchprob[order(matchprob, decreasing = TRUE)] # order by probability
+matchprob
 
 optionmatch <- function(inputNgram, freqVector, options) {
   # match quiz options to model results; do not use for unigrams?
@@ -115,8 +105,36 @@ optionmatch <- function(inputNgram, freqVector, options) {
     }
 }
 
+# Investigate Kneser - Ney smoothing (account for context), trying to find 2nd word in bigram
+wi_1 <- "playing"
+quizoptions <- c("daily", "weekly", "outside", "inside")
+# confirm wi_1 is in corpus, if not, back off to unigram frequency
+if (wi_1 %in% names(unifreq)) {
+  quizbigrams <- paste(wi_1, "_", quizoptions, sep = "")
+  # find all wi's for this wi_1
+  matchingbigrams <- bifreq[grep(paste("^",wi_1,"_", sep = ""), names(bifreq))]
+  unigram_ct_wi_1 <- unifreq[[grep(paste("^", wi_1, "$", sep = ""), names(unifreq))]]
+  D <- .75 # discount rate
+  lambda <- D/unigram_ct_wi_1 * length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq))) # last term is number of times discount applied to frequencies of wi-1, wi
+  p_continuation_w <- length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq)))
+  totalBigramTypes <- length(bifreq)
+  bigram_ct_wi_1 <- sum(bifreq[(grep(paste("^",wi_1,"_", sep = ""), names(bifreq)))] - D)
+  for (i in 1:length(matchingbigrams)) {
+    #
+    bigram_ct_wi_1 <- matchingbigrams[[i]] - D
+    matchingbigrams[i] <- max(bigram_ct_wi_1/unigram_ct_wi_1, 0) + lambda * (p_continuation_w/totalBigramTypes)
+  }
+  matchingbigrams <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
+  subset(matchingbigrams, names(matchingbigrams) %in% quizbigrams)
+  
+} else {
+  subset(unifreq, names(unifreq) %in% quizoptions)
+}
+
+#START HERE: Attempt recursive model starting at fourgrams, then reapply to quiz 3
 
 
+# OLD CODE
 # loop through string to find all bigrams therein and calculate probabilities
 # calculate P(word 2 follows word 1): find count of all word1-word2 bigrams/divide by count of all word1-wordX bigrams
 w1 <- "a" #x
@@ -154,12 +172,6 @@ weatherMatrix = matrix(data = c(0.70, 0.2,0.1,
 mcWeather = new("markovchain", states = weatherStates, byrow = byRow,
                 transitionMatrix = weatherMatrix, name = "Weather")
 
-
-
-# include "backoff" or missing terms code here to assign probability
-# include trigram match code
-# create a function, use loop or apply to parse a string word by word, then return total probability
-# test against quiz 2 answers
 
 # create training, development and test sets using 80/10/10 split
 
