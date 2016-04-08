@@ -32,6 +32,9 @@ right = function (string, char){
   substr(string,nchar(string)-(char-1),nchar(string))
 }
 
+test <- unlist(strsplit("playing_the_violin", "_"))
+test[length(test)]
+
 # load in n-grams objects if needed
  load("unigrams.Rda")
  load("bigrams.Rda")
@@ -58,10 +61,16 @@ fourfreq <- fourfreq[order(fourfreq, decreasing = TRUE)]
 # names(bifreq) <- gsub("_", " ", names(bifreq))
 
 #convert frequencies to probabilities
-uniprob <- unifreq/length(unifreq)
-biprob <- bifreq/length(bifreq)
-triprob <- trifreq/length(trifreq)
-fourprob <- fourfreq/length(fourfreq)
+uniprob <- unifreq/sum(unifreq)
+biprob <- bifreq/sum(bifreq)
+triprob <- trifreq/sum(trifreq)
+fourprob <- fourfreq/sum(fourfreq)
+
+save(uniprob, file = "uniprob.Rda")
+save(unifreq, file = "unifreq.Rda")
+save(bifreq, file = "bifreq.Rda")
+save(trifreq, file = "trifreq.Rda")
+save(fourfreq, file = "fourfreq.Rda")
 
 # III. Experiment with the model
 
@@ -108,7 +117,7 @@ optionmatch <- function(inputNgram, freqVector, options) {
 # Investigate Kneser - Ney smoothing (account for context), trying to find 2nd word in bigram
 wi_1 <- "playing"
 quizoptions <- c("daily", "weekly", "outside", "inside")
-# confirm wi_1 is in corpus, if not, back off to unigram frequency
+# confirm wi_1 is in bigram list corpus
 if (wi_1 %in% names(unifreq)) {
   quizbigrams <- paste(wi_1, "_", quizoptions, sep = "")
   # find all wi's for this wi_1
@@ -125,13 +134,48 @@ if (wi_1 %in% names(unifreq)) {
     matchingbigrams[i] <- max(bigram_ct_wi_1/unigram_ct_wi_1, 0) + lambda * (p_continuation_w/totalBigramTypes)
   }
   matchingbigrams <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
-  subset(matchingbigrams, names(matchingbigrams) %in% quizbigrams)
-  
+    subset(matchingbigrams, names(matchingbigrams) %in% quizbigrams)
 } else {
   subset(unifreq, names(unifreq) %in% quizoptions)
 }
 
-#START HERE: Attempt recursive model starting at fourgrams, then reapply to quiz 3
+
+# update model above for app
+wi_1 <- "playing with fire"
+#need to do some text parsing here to get last full word, later last 2-3 words for recursive prediction
+wi_1 <- unlist(strsplit(wi_1, " "))[length(unlist(strsplit(wi_1, " ")))]
+if (wi_1 %in% names(unifreq)) {
+  # find all wi's for this wi_1
+  matchingbigrams <- bifreq[grep(paste("^",wi_1,"_", sep = ""), names(bifreq))]
+  unigram_ct_wi_1 <- unifreq[[grep(paste("^", wi_1, "$", sep = ""), names(unifreq))]]
+  D <- .75 # discount rate
+  lambda <- D/unigram_ct_wi_1 * length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq))) # last term is number of times discount applied to frequencies of wi-1, wi
+  p_continuation_w <- length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq)))
+  totalBigramTypes <- length(bifreq)
+  bigram_ct_wi_1 <- sum(bifreq[(grep(paste("^",wi_1,"_", sep = ""), names(bifreq)))] - D)
+  for (i in 1:length(matchingbigrams)) {
+    #
+    bigram_ct_wi_1 <- matchingbigrams[[i]] - D
+    matchingbigrams[i] <- max(bigram_ct_wi_1/unigram_ct_wi_1, 0) + lambda * (p_continuation_w/totalBigramTypes)
+  }
+  matchingbigrams <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
+  predWords <- gsub(paste(wi_1, "_", sep = ""), "", names(matchingbigrams[1:7]))
+  predWords
+} else {
+  predWords <- names(uniprob[1:7])
+}
+
+
+
+# experiement with word cloud
+library(wordcloud)
+words <- unifreq
+words <- words[!(names(words) %in% stopwords())]
+wordcloud(words = names(words), freq = words, max.words = 25, random.order = FALSE)
+
+
+# LATER: Attempt recursive model starting at fourgrams, then reapply to quiz 3
+# also, need to rework using training and test sets in preparation for app. 
 
 
 # OLD CODE
