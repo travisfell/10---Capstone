@@ -13,8 +13,9 @@ shinyUI(pageWithSidebar(
       submitButton('Submit')
     ),
     mainPanel(
-        h3('Your Word Prediction'),
+        h3('The top 7 words associated with your text are: '),
         verbatimTextOutput("prediction"),
-        p("Word cloud will go here.")
+        p("The word cloud below shows upto the top 25 words that match the entered text."),
+        plotOutput("textcloudplot")
     )
 ))

@@ -4,6 +4,7 @@
 #prep the environment
 library(shiny)
 library(quanteda)
+library(wordcloud)
 load("uniprob.Rda")
 load("unifreq.Rda")
 load("bifreq.Rda")
@@ -28,13 +29,23 @@ textpred <- function(enteredtext){
       bigram_ct_wi_1 <- matchingbigrams[[i]] - D
       matchingbigrams[i] <- max(bigram_ct_wi_1/unigram_ct_wi_1, 0) + lambda * (p_continuation_w/totalBigramTypes)
     }
-    matchingbigrams <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
-    predWords <- gsub(paste(wi_1, "_", sep = ""), "", names(matchingbigrams[1:7]))
+    predWordsProb <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
+    predWordsProb <- predWordsProb[1:25]
+    names(predWordsProb) <- gsub(paste(wi_1, "_", sep = ""), "", names(predWordsProb))
+    predWords <- names(predWordsProb)
     predWords
     } else { # if entered word not in corpus
-    predWords <- names(uniprob[1:7])
+      predWordsProb <- uniprob
+      predWordsProb <- predWordsProb[!(names(predWordsProb) %in% stopwords())]
+      predWordsProb <- predWordsProb[1:25]
+      predWords <- names(predWordsProb)
     }
-  predWords
+  
+  # create word cloud of top 25 results
+  textwordcloud <- wordcloud(words = names(predWordsProb), freq = predWordsProb, max.words = 25, random.order = FALSE)
+
+  # return values
+  return(list(predWords[1:7], textwordcloud))
 }
 
-# need to create word cloud here, send back to UI via different variable
+
