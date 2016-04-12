@@ -33,7 +33,6 @@ textpred <- function(enteredtext){
     predWordsProb <- predWordsProb[1:25]
     names(predWordsProb) <- gsub(paste(wi_1, "_", sep = ""), "", names(predWordsProb))
     predWords <- names(predWordsProb)
-    predWords
     } else { # if entered word not in corpus
       predWordsProb <- uniprob
       predWordsProb <- predWordsProb[!(names(predWordsProb) %in% stopwords())]
@@ -42,10 +41,18 @@ textpred <- function(enteredtext){
     }
   
   # create word cloud of top 25 results
-  textwordcloud <- wordcloud(words = names(predWordsProb), freq = predWordsProb, max.words = 25, random.order = FALSE)
-
+  # create word cloud of top 25 results
+  textwordcloud <- wordcloud(words = names(predWordsProb)
+                             , random.color = TRUE
+                             , rot.per = .25
+                             , colors = c("black","red", "blue", "green", "orange", "brown", "pink", "yellow")
+                             , scale = c(3, .5)
+                             , freq = predWordsProb
+                             , max.words = 25
+                             , random.order = FALSE
+  )
   # return values
-  return(list(predWords[1:7], textwordcloud))
+  return(list(predWords[1:5], textwordcloud))
 }
 
 
