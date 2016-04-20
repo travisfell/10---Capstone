@@ -17,7 +17,7 @@ textpred <- function(enteredtext){
   wi_1 <- enteredtext
   #parse text to get last full word, later last 2-3 words for recursive prediction
   wi_1 <- unlist(strsplit(wi_1, " "))[length(unlist(strsplit(wi_1, " ")))]
-  if (wi_1 %in% names(unifreq)) { # if entered word not in the corpus
+  if (wi_1 %in% names(unifreq)) { # if entered word in the corpus
     matchingbigrams <- bifreq[grep(paste("^",wi_1,"_", sep = ""), names(bifreq))]
     unigram_ct_wi_1 <- unifreq[[grep(paste("^", wi_1, "$", sep = ""), names(unifreq))]]
     D <- .75 # discount rate
@@ -41,7 +41,6 @@ textpred <- function(enteredtext){
     }
   
   # create word cloud of top 25 results
-  # create word cloud of top 25 results
   textwordcloud <- wordcloud(words = names(predWordsProb)
                              , random.color = TRUE
                              , rot.per = .25
@@ -52,7 +51,7 @@ textpred <- function(enteredtext){
                              , random.order = FALSE
   )
   # return values
-  return(list(predWords[1:5], textwordcloud))
+  return(list(predWords[1:3], textwordcloud))
 }
 
 

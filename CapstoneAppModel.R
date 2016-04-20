@@ -89,7 +89,7 @@ save(fourfreq_train, file = "fourfreq_train.Rda")
 
 # III. Experiment with and test the model
 #init testing variables
-totaltests <- 50
+totaltests <- 20
 matchedtests <- 0
 
 for (a in 1:totaltests) {
@@ -104,7 +104,7 @@ for (a in 1:totaltests) {
   wi_1 <- sub(paste(" ", wi, sep = ""), "", testNgram)
   
   # Investigate Kneser - Ney smoothing (account for context), trying to find 2nd word in bigram
-  #wi_1 <- 'playing'
+  #wi_1 <- 'goose'
   #parse text to get last full word, later last 2-3 words for recursive prediction
   #wi_1 <- unlist(strsplit(wi_1, " "))[length(unlist(strsplit(wi_1, " ")))]
   if (wi_1 %in% names(unifreq_train)) { # if entered word not in the corpus
@@ -138,6 +138,51 @@ for (a in 1:totaltests) {
   print(paste("Completed test ", a, ". Current match % is ", matchedtests/a,  sep = ""))
 }  
 print(paste("Final test match rate = ", matchedtests/totaltests, sep = ""))
+
+
+# Kneser-Ney with trigram recursion
+
+ngram <- 'thanks_for_the'
+#parse text to get last full word, later last 2-3 words for recursive prediction
+ngram_split <- unlist(strsplit(ngram, "_"))
+wi <- ngram_split[3]
+wi_1 <- ngram_split[2]
+wi_2 <- ngram_split[1]
+wi_2_1 <- paste(wi_2, wi_1, sep = "_")
+wi_0_1 <- paste(wi_1, wi, sep = "_")
+
+D <- .75 # discount rate
+matching_ngrams <- trifreq_train[grep(paste("^",ngram,"$", sep = ""), names(trifreq_train))]
+matching_wi_2_1 <- bifreq_train[grep(paste("^",wi_2_1,"$", sep = ""), names(bifreq_train))]
+wi_2_1types <- length(trifreq_train[grep(paste("^",wi_2_1,sep = ""), names(trifreq_train))])
+matching_wi_0_1 <- bifreq_train[grep(paste("^",wi_0_1,"$", sep = ""), names(bifreq_train))]
+matching_wi_1 <- unifreq_train[grep(paste("^",wi_1,"$", sep = ""), names(unifreq_train))]
+wi_1types <- length(bifreq_train[grep(paste("^",wi_1, "_",sep = ""), names(bifreq_train))])
+wi_end_types <- length(bifreq_train[grep(paste("_", wi, "$", sep = ""), names(bifreq_train))])
+allbigramtypes <- length(bifreq_train)
+N1 <- length(trifreq_train[trifreq_train == 1]) # count of n grams that occur once
+
+max(matching_ngrams - D, 0)/matching_wi_2_1 
+  + D/matching_wi_2_1 * N1 + wi_2_1types * (max(matching_wi_0_1 - D, 0)/matching_wi_1)
+  + D/matching_wi_1 * N1 + wi_1types * (N1 + wi_end_types)/(N1 + allbigramtypes)
+
+
+matchingbigrams <- bifreq_train[grep(paste("^",wi_1,"_", sep = ""), names(bifreq_train))]
+unigram_ct_wi_1 <- unifreq_train[[grep(paste("^", wi_1, "$", sep = ""), names(unifreq_train))]]
+D <- .75 # discount rate
+lambda <- D/unigram_ct_wi_1 * length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq_train))) # last term is number of times discount applied to frequencies of wi-1, wi
+p_continuation_w <- length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq_train)))
+totalBigramTypes <- length(bifreq_train)
+bigram_ct_wi_1 <- sum(bifreq_train[(grep(paste("^",wi_1,"_", sep = ""), names(bifreq_train)))] - D)
+for (i in 1:length(matchingbigrams)) {
+  bigram_ct_wi_1 <- matchingbigrams[[i]] - D
+  matchingbigrams[i] <- max(bigram_ct_wi_1/unigram_ct_wi_1, 0) + lambda * (p_continuation_w/totalBigramTypes)
+}
+predWordsProb <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
+predWordsProb <- predWordsProb[1:25]
+names(predWordsProb) <- gsub(paste(wi_1, "_", sep = ""), "", names(predWordsProb))
+predWords <- names(predWordsProb)
+
 
 
 # create word cloud of top 25 results

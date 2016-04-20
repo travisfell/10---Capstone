@@ -140,8 +140,10 @@ if (wi_1 %in% names(unifreq)) {
 }
 
 
+load("bigrams.Rda")
+
 # update model above for app
-wi_1 <- "playing with fire"
+wi_1 <- "goose"
 #need to do some text parsing here to get last full word, later last 2-3 words for recursive prediction
 wi_1 <- unlist(strsplit(wi_1, " "))[length(unlist(strsplit(wi_1, " ")))]
 if (wi_1 %in% names(unifreq)) {
@@ -158,20 +160,26 @@ if (wi_1 %in% names(unifreq)) {
     bigram_ct_wi_1 <- matchingbigrams[[i]] - D
     matchingbigrams[i] <- max(bigram_ct_wi_1/unigram_ct_wi_1, 0) + lambda * (p_continuation_w/totalBigramTypes)
   }
-  matchingbigrams <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
-  predWords <- gsub(paste(wi_1, "_", sep = ""), "", names(matchingbigrams[1:7]))
-  predWords
+  predWordsProb <- matchingbigrams[order(matchingbigrams, decreasing = TRUE)]
+  predWordsProb <<- predWordsProb[1:25]
+  names(predWordsProb) <- gsub(paste(wi_1, "_", sep = ""), "", names(predWordsProb))
+  predWords <- names(predWordsProb)
 } else {
-  predWords <- names(uniprob[1:7])
+  predWordsProb <- uniprob
+  predWordsProb <- predWordsProb[!(names(predWordsProb) %in% stopwords())]
+  predWordsProb <- predWordsProb[1:25]
+  predWords <- names(predWordsProb)
 }
-
-
+predWords[1:7]
 
 # experiement with word cloud
 library(wordcloud)
-words <- unifreq
-words <- words[!(names(words) %in% stopwords())]
+words <- predWordsProb
+#words <- words[!(names(words) %in% stopwords())]
 wordcloud(words = names(words), freq = words, max.words = 25, random.order = FALSE)
+
+#show top 25 words associated with the entered word
+
 
 
 # LATER: Attempt recursive model starting at fourgrams, then reapply to quiz 3
