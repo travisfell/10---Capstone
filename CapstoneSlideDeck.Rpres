@@ -1,7 +1,7 @@
-CapstoneSlideDeck
+Introducing the Text Prediction Cloud App
 ========================================================
 author: Travis Fell
-date: April 19, 2016
+date: April 20, 2016
 autosize: true
 
 Overview of the Text Prediction Cloud App
@@ -22,7 +22,31 @@ Below is an overview of the data processing, algorithm and testing methods for t
 4. Developed a Knesser-Ney algorithm using the bigram and unigram lists. 
 5. Developed a testing algorithm that randomly sampled the test set 20 times and recorded how often the model predicted the last word within the top 3 results. After 10 simulations, the model consistently had betwen a 20% and 25% success rate. 
 
+Algorithm
+========================================================
+The code below summarizes the Kneser-Ney model the app uses. <small>
+```{r eval=FALSE}
+wi_1 <- enteredtext
+wi_1 <- unlist(strsplit(wi_1, " "))[length(unlist(strsplit(wi_1, " ")))]
+matchingbigrams <- bifreq[grep(paste("^",wi_1,"_", sep = ""), names(bifreq))]
+unigram_ct_wi_1 <- unifreq[[grep(paste("^", wi_1, "$", sep = ""), names(unifreq))]]
+D <- .75 
+lambda <- D/unigram_ct_wi_1 * length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq))) 
+p_continuation_w <- length(grep(paste("^",wi_1,"_", sep = ""), names(bifreq)))
+totalBigramTypes <- length(bifreq)
+bigram_ct_wi_1 <- sum(bifreq[(grep(paste("^",wi_1,"_", sep = ""), names(bifreq)))] - D)
+for (i in 1:length(matchingbigrams)) {
+  bigram_ct_wi_1 <- matchingbigrams[[i]] - D
+  matchingbigrams[i] <- max(bigram_ct_wi_1/unigram_ct_wi_1, 0) + lambda * (p_continuation_w/totalBigramTypes) }
+```
+</small>
+
 Demo
 ========================================================
-[show screen captures and explanatory text]
+Text Word Cloud is easy to use. Just 1) type in your text, 2) click Submit, and 3) watch the prediction magic and word cloud happen! 
+![alt text](TextWordCloud3.gif)
 
+
+Take the Next Step
+========================================================
+Start your text prediction adventure today: https://tfell2001.shinyapps.io/CapstoneWordPredict/
